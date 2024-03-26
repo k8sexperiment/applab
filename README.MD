@@ -327,3 +327,4 @@ writer-monitor   3m46s
 ## Output - check Grafana
 =================
 
+![Grafana example](https://github.com/k8sexperiment/applab/blob/main/source-test/grafana/dashboard.png)
