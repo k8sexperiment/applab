@@ -21,6 +21,7 @@ Before you begin, ensure you have the following tools installed:
    ```bash
    git clone https://github.com/k8sexperiment/applab
    cd applab
+   task --list-all
    # setup full environment
    task create_everything 
    # do some testing
@@ -328,3 +329,13 @@ writer-monitor   3m46s
 =================
 
 ![Grafana example](https://github.com/k8sexperiment/applab/blob/main/source-test/grafana/dashboard.png)
+
+## Output - delete everything
+=================
+
+```bash
+task delete_everything
+task: [delete_everything] kind delete cluster
+Deleting cluster "kind" ...
+Deleted nodes: ["kind-control-plane" "kind-worker3" "kind-worker" "kind-worker2"]
+```
