@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reader-deployment
+  labels:
+    app: reader
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: reader
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: reader
+    spec:
+      containers:
+      - name: reader
+        image: reader-image:2
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8080
+        - containerPort: 8000
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: user
+        - name: DB_PASS
+          valueFrom:
+            secretKeyRef:
+              name: db-credentials
+              key: password
+        - name: DB_HOST
+          value: "mysql"
+        - name: DB_NAME
+          value: "testdb"
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - kind-worker
+                - kind-worker2
+                - kind-worker3
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: reader-monitor
+spec:
+  selector:
+    matchLabels:
+      app: reader
+  endpoints:
+  - port: metrics
+    interval: 15s
+  targetLabels:
+    - app
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: reader-pdb
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: reader
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reader
+  labels:
+    app: reader
+spec:
+  selector:
+    app: reader
+  ports:
+    - protocol: TCP
+      name: web
+      port: 8080
+      targetPort: 8080
+    - protocol: TCP
+      name: metrics
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: reader-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /reader
+        pathType: Prefix
+        backend:
+          service:
+            name: reader
+            port:
+              number: 8080

@@ -1,0 +1,67 @@
+version: '3.1'
+
+services:
+
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: testdb
+      MYSQL_DATABASE: testdb
+      MYSQL_USER: testdb
+      MYSQL_PASSWORD: testdb
+
+  writer:
+    image: writer-image:2
+    build:
+      context: ./
+      dockerfile: Dockerfile.writer
+    restart: always
+    environment:
+      DB_USER: testdb
+      DB_PASS: testdb
+      DB_HOST: db
+      DB_NAME: testdb
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+
+  reader:
+    image: reader-image:2
+    build:
+      context: ./
+      dockerfile: Dockerfile.reader
+    restart: always
+    environment:
+      DB_USER : testdb
+      DB_PASS: testdb
+      DB_HOST: db
+      DB_NAME: testdb
+    ports:
+      - 8080:8080
+      - 8001:8000
+    depends_on:
+      - db
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    restart: unless-stopped
+    volumes:
+      - ./prometheus:/etc/prometheus
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana

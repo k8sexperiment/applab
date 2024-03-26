@@ -1,0 +1,114 @@
+{
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "gnetId": null,
+    "graphTooltip": 0,
+    "id": null,
+    "links": [],
+    "panels": [
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {}
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "id": 2,
+        "options": {},
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(rate(request_processing_seconds_count{job=\"writer\"}[1m]))",
+            "format": "time_series",
+            "instant": false,
+            "interval": "",
+            "legendFormat": "Writer Response Time",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(request_processing_seconds_sum{job=\"writer\"}[1m])) / sum(rate(request_processing_seconds_count{job=\"writer\"}[1m]))",
+            "format": "time_series",
+            "instant": false,
+            "interval": "",
+            "legendFormat": "Average Writer Response Time",
+            "refId": "B"
+          }
+        ],
+        "title": "Writer Response Time",
+        "type": "graph"
+      },
+      {
+        "datasource": "Prometheus",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {}
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "id": 6,
+        "options": {},
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(rate(request_processing_seconds_count{job=\"reader\"}[1m]))",
+            "format": "time_series",
+            "instant": false,
+            "interval": "",
+            "legendFormat": "Reader Response Time",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(request_processing_seconds_sum{job=\"reader\"}[1m])) / sum(rate(request_processing_seconds_count{job=\"reader\"}[1m]))",
+            "format": "time_series",
+            "instant": false,
+            "interval": "",
+            "legendFormat": "Average Reader Response Time",
+            "refId": "B"
+          }
+        ],
+        "title": "Reader Response Time",
+        "type": "graph"
+      }
+    ],
+    "refresh": "10s",
+    "schemaVersion": 27,
+    "style": "dark",
+    "tags": [],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "",
+    "title": "Database Metrics Dashboard",
+    "uid": null
+  }
+  

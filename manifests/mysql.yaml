@@ -1,0 +1,7 @@
+auth:
+  createDatabase: true
+  database: "testdb"
+  username: "testdb"
+  password: "testdb"
+  replicationUser: replicator
+  replicationPassword: ""

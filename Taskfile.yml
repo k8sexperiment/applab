@@ -1,0 +1,64 @@
+version: '3'
+
+tasks:
+
+  prerequisites:
+    cmds:
+      - command -v helm >/dev/null 2>&1 || { echo >&2 "helm is required but it's not installed.  Aborting."; exit 1; }
+      - command -v kubectl >/dev/null 2>&1 || { echo >&2 "kubectl is required but it's not installed.  Aborting."; exit 1; }
+      - command -v k6 >/dev/null 2>&1 || { echo >&2 "k6 is required but it's not installed.  Aborting."; exit 1; }
+      - command -v kind >/dev/null 2>&1 || { echo >&2 "kind is required but it's not installed.  Aborting."; exit 1; }
+      - command -v docker >/dev/null 2>&1 || { echo >&2 "docker and docker compose is required but it's not installed.  Aborting."; exit 1; }
+
+  build_and_test_images:
+    cmds:
+      - docker compose -f source-test/docker-compose.yaml up -d
+      - docker compose -f source-test/docker-compose.yaml down
+    deps: [prerequisites]
+
+  create_kind_cluster:
+    cmds:
+      - kind create cluster --config=manifests/kind.yaml
+    deps: [build_and_test_images]
+
+  load_images:
+    cmds:
+      - kind load docker-image writer-image:2
+      - kind load docker-image reader-image:2
+    deps: [create_kind_cluster]
+
+  deploy_nginx_controller:
+    cmds:
+      - kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
+      - kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=90s
+    deps: [load_images]
+
+  create_namespaces_and_deploy_components:
+    desc: "Create main components for the app"
+    cmds:
+      - kubectl create ns app
+      - kubectl create ns monitoring
+      - kubectl create secret generic db-credentials --from-literal=user=testdb --from-literal=password=testdb -n app
+      - helm upgrade --install mysql oci://registry-1.docker.io/bitnamicharts/mysql -f manifests/mysql.yaml -n app
+      - kubectl wait --namespace app --for=condition=ready pod --selector=app.kubernetes.io/instance=mysql --timeout=120s
+      - helm upgrade --install monitoring prometheus-community/kube-prometheus-stack -f manifests/monitoring.yaml -n monitoring
+      - kubectl apply -f manifests/writer.yaml -n app
+      - kubectl apply -f manifests/reader.yaml -n app
+      - kubectl wait --namespace app --for=condition=ready pod --selector=app=reader --timeout=90s
+    deps: [deploy_nginx_controller]
+
+  create_everything:
+    deps: [create_namespaces_and_deploy_components]
+
+  test_apps:
+    desc: "Run k6 script to reader generate metrics & run stress test for reader deployment so we can see that diff pod is picked up"
+    cmds:
+      - k6 run k6-script.js
+      - for ((i=0; i<2; i++)); do curl -s http://localhost/reader; sleep 2; done
+      - kubectl rollout restart deployment reader-deployment -n app
+      - for ((i=0; i<10; i++)); do curl -s http://localhost/reader; sleep 2; done
+
+
+  delete_everything:
+    cmds:
+      - kind delete cluster
