@@ -19,11 +19,12 @@ Before you begin, ensure you have the following tools installed:
 **Clone this repository:**
 
    ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/k8sexperiment/applab
+   cd applab
    task create_everything # setup full environment
    task test_apps # do some testing
    task delete_everything # delete everything
+   ```
 
 ## Output
 =================
